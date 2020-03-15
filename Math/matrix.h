@@ -6,6 +6,7 @@
 #include "common.h"
 
 #include <string>
+#include <sstream>
 
 // Check compiler version required
 #ifdef _MSC_VER				// MSVC
@@ -51,10 +52,6 @@
 #endif	// __cplusplus >= 201103L
 
 namespace NUDTTK {
-	// Forward declarations
-	template<typename _T>
-	class Matrix;
-
 	// Return type traits
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
 	// Main template
@@ -271,8 +268,9 @@ namespace NUDTTK {
 	};
 #endif // !NOT_SUPPORT_LAZY_EVALUATION
 
+
 	template<typename _T>
-	struct _scalar_wrapper;
+	struct _scalar_support;
 
 	template<typename _T>
 	struct _non_scalar_support {};
@@ -345,28 +343,28 @@ template<typename _Lhs, typename _Rhs, typename _Element,								\
 		 typename std::enable_if<std::is_arithmetic<_Element>::value, int>::type = 0>	\
 _CONSTEXPR_FN _impl##<##_impl##<_Lhs, _Rhs>, _scalar##<_Element>>						\
 	operator _operator##(const _impl##<_Lhs, _Rhs>& lhs,								\
-				const _Element& rhs) _NOEXCEPT {										\
+						 const _Element& rhs) _NOEXCEPT {								\
 	return _impl##<##_impl##<_Lhs, _Rhs>, _scalar##<_Element>>(lhs, rhs);				\
 }																						\
 template<typename _Lhs, typename _Rhs, typename _Element,								\
 		 typename std::enable_if<!std::is_arithmetic<_Element>::value, int>::type = 0>	\
 _CONSTEXPR_FN _impl##<##_impl##<_Lhs, _Rhs>, _Element>									\
 	operator _operator##(const _impl##<_Lhs, _Rhs>& lhs,								\
-				const _Element& rhs) _NOEXCEPT {										\
+						 const _Element& rhs) _NOEXCEPT {								\
 	return _impl##<##_impl##<_Lhs, _Rhs>, _Element>(lhs, rhs);							\
 }																						\
 template<typename _Lhs, typename _Rhs, typename _Element,								\
 		 typename std::enable_if<std::is_arithmetic<_Element>::value, int>::type = 0>	\
 _CONSTEXPR_FN _impl##<##_scalar##<_Element>, _impl##<_Lhs, _Rhs>>						\
 	operator _operator##(const _Element& lhs,											\
-				const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {								\
+						 const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {					\
 	return _impl##<##_scalar##<_Element>, _impl##<_Lhs, _Rhs>>(lhs, rhs);				\
 }																						\
 template<typename _Lhs, typename _Rhs, typename _Element,								\
 		 typename std::enable_if<!std::is_arithmetic<_Element>::value, int>::type = 0>	\
 _CONSTEXPR_FN _impl##<_Element, _impl##<_Lhs, _Rhs>>									\
 	operator _operator##(const _Element& lhs,											\
-				const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {								\
+						 const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {					\
 	return _impl##<_Element, _impl##<_Lhs, _Rhs>>(lhs, rhs);							\
 }																						\
 template<typename _Lhs, typename _Rhs,													\
@@ -396,47 +394,47 @@ template<typename _Lhs, typename _Rhs, typename _Element,									\
 		 typename boost::enable_if_c<boost::is_arithmetic<_Element>::value, int>::type = 0>	\
 _CONSTEXPR_FN _impl##<##_impl##<_Lhs, _Rhs>, _scalar##<_Element>>							\
 	operator _operator##(const _impl##<_Lhs, _Rhs>& lhs,									\
-				const _Element& rhs) _NOEXCEPT {											\
+						 const _Element& rhs) _NOEXCEPT {									\
 	return _impl##<##_impl##<_Lhs, _Rhs>, _scalar##<_Element>>(lhs, rhs);					\
 }																							\
 template<typename _Lhs, typename _Rhs, typename _Element,									\
 		 typename boost::enable_if_c<!boost::is_arithmetic<_Element>::value, int>::type = 0>\
 _CONSTEXPR_FN _impl##<##_impl##<_Lhs, _Rhs>, _Element>										\
 	operator _operator##(const _impl##<_Lhs, _Rhs>& lhs,									\
-				const _Element& rhs) _NOEXCEPT {											\
+						 const _Element& rhs) _NOEXCEPT {									\
 	return _impl##<##_impl##<_Lhs, _Rhs>, _Element>(lhs, rhs);								\
 }																							\
 template<typename _Lhs, typename _Rhs, typename _Element,									\
 		 typename boost::enable_if_c<boost::is_arithmetic<_Element>::value, int>::type = 0>	\
 _CONSTEXPR_FN _impl##<##_scalar##<_Element>, _impl##<_Lhs, _Rhs>>							\
 	operator _operator##(const _Element& lhs,												\
-				const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {									\
+						 const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {						\
 	return _impl##<##_scalar##<_Element>, _impl##<_Lhs, _Rhs>>(lhs, rhs);					\
 }																							\
 template<typename _Lhs, typename _Rhs, typename _Element,									\
 		 typename boost::enable_if_c<!boost::is_arithmetic<_Element>::value, int>::type = 0>\
 _CONSTEXPR_FN _impl##<_Element, _impl##<_Lhs, _Rhs>>										\
 	operator _operator##(const _Element& lhs,												\
-				const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {									\
+						 const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {						\
 	return _impl##<_Element, _impl##<_Lhs, _Rhs>>(lhs, rhs);								\
 }																							\
 template<typename _Lhs, typename _Rhs,														\
 		 typename boost::enable_if_c<boost::is_arithmetic<_Lhs>::value						\
-							 && !boost::is_arithmetic<_Rhs>::value, int>::type = 0>			\
+								 && !boost::is_arithmetic<_Rhs>::value, int>::type = 0>		\
 _CONSTEXPR_FN _impl##<##_scalar##<_Lhs>, _Rhs>												\
 	operator _operator##(const _Lhs& lhs, const _Rhs& rhs) _NOEXCEPT {						\
 	return _impl##<##_scalar##<_Lhs>, _Rhs>(lhs, rhs);										\
 }																							\
 template<typename _Lhs, typename _Rhs,														\
 		 typename boost::enable_if_c<boost::is_arithmetic<_Rhs>::value						\
-							 && !boost::is_arithmetic<_Lhs>::value, int>::type = 0>			\
+								 && !boost::is_arithmetic<_Lhs>::value, int>::type = 0>		\
 _CONSTEXPR_FN _impl##<_Lhs, _scalar##<_Rhs>>												\
 	operator _operator##(const _Lhs& lhs, const _Rhs& rhs) _NOEXCEPT {						\
 	return _impl##<_Lhs, _scalar##<_Rhs>>(lhs, rhs);										\
 }																							\
 template<typename _Lhs, typename _Rhs,														\
 		 typename boost::enable_if_c<!boost::is_arithmetic<_Rhs>::value						\
-							  && !boost::is_arithmetic<_Lhs>::value, int>::type = 0>		\
+								  && !boost::is_arithmetic<_Lhs>::value, int>::type = 0>	\
 _CONSTEXPR_FN _impl##<_Lhs, _Rhs>															\
 	operator _operator##(const _Lhs& lhs, const _Rhs& rhs) _NOEXCEPT {						\
 	return _impl##<_Lhs, _Rhs>(lhs, rhs);													\
@@ -479,71 +477,222 @@ _CONSTEXPR_FN _Un unwrap() const _NOEXCEPT {									\
 	return _variable_name##;													\
 }
 
-template<typename _T>
-struct _scalar_wrapper {
-	_T value_;
-
-	_CONSTEXPR_FN _scalar_wrapper(const _T& value) _NOEXCEPT
-		: value_(value) {}
-	CLS_UNUSED_CONSTRUCTOR(_scalar_wrapper)
-	CLS_UNWRAP(_scalar_wrapper, _T, value_)
-	_CONSTEXPR_FN operator _T() const _NOEXCEPT {
-		return value_;
-	}
-};
-
-// Support operator + - / with Matrix and scalar
-CREATE_AND_COMBINE_BINARY_OP(add_op_impl, +, _non_scalar_support)
-CREATE_AND_COMBINE_BINARY_OP(sub_op_impl, -, _non_scalar_support)
-CREATE_AND_COMBINE_BINARY_OP(mul_op_impl, *, _scalar_wrapper)
-
-	/// <summary> A wrapper class for Eigen to support. </summary>
-	/// <remarks> Blue Wing, 2020/3/14. </remarks>
-	/// <typeparam name="_T"> Type of the t. </typeparam>
 	template<typename _T>
+	struct _scalar_support {
+		_T value_;
+
+		_CONSTEXPR_FN _scalar_support(const _T& value) _NOEXCEPT
+			: value_(value) {}
+		CLS_UNUSED_CONSTRUCTOR(_scalar_support)
+			CLS_UNWRAP(_scalar_support, _T, value_)
+			_CONSTEXPR_FN operator _T() const _NOEXCEPT {
+			return value_;
+		}
+	};
+
+	// Support operator + - with Matrix, / for scalar and * for both Matrix and scalar
+	CREATE_AND_COMBINE_BINARY_OP(add_op_impl, +, _non_scalar_support)
+		CREATE_AND_COMBINE_BINARY_OP(sub_op_impl, -, _non_scalar_support)
+		CREATE_AND_COMBINE_BINARY_OP(mul_op_impl, *, _scalar_support)
+
+		/// <summary> A wrapper class for Eigen to support. </summary>
+		/// <remarks> Blue Wing, 2020/3/14. </remarks>
+		/// <typeparam name="_T"> Type of the t. </typeparam>
+		template<typename _T>
 	class Matrix {
 	public:
-		typedef Eigen::Matrix<_T, Eigen::Dynamic, Eigen::Dynamic> base_type;
+		typedef Eigen::Matrix<_T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> base_type;
 		CLS_BINARY_OP(Matrix, base_type, value_, add_op_impl)
-		CLS_BINARY_OP(Matrix, base_type, value_, sub_op_impl)
-		CLS_BINARY_OP(Matrix, base_type, value_, mul_op_impl)
-		CLS_UNWRAP(Matrix, base_type, value_)
+			CLS_BINARY_OP(Matrix, base_type, value_, sub_op_impl)
+			CLS_BINARY_OP(Matrix, base_type, value_, mul_op_impl)
+			CLS_UNWRAP(Matrix, base_type, value_)
 
 	public:
-		_CONSTEXPR_FN Matrix() {}
-		_CONSTEXPR_FN Matrix(const size_t row_size, const size_t col_size) {}
-		_CONSTEXPR_FN Matrix(const size_t row_size, const size_t nCols, _T default_values[]) {}
-		_CONSTEXPR_FN Matrix(const size_t square_size) {}
-		_CONSTEXPR_FN Matrix(const size_t square_size, _T default_values[]) {}
-		_CONSTEXPR_FN ~Matrix() {}
+		/// <summary> Default constructor (no thing to do). </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		_CONSTEXPR_FN Matrix() _NOEXCEPT {}
+
+		/// <summary> Initialize Matrix in row size and col size. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="row_size"> Size of the row. </param>
+		/// <param name="col_size"> Size of the col. </param>
+		_CONSTEXPR_FN Matrix(const size_t row_size, const size_t col_size) _NOEXCEPT
+			: value_(base_type::Zero(row_size, col_size)) {}
+
+		/// <summary> Initialize Matrix in row size and col size with default values. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="row_size">	Size of the row. </param>
+		/// <param name="col_size">	The cols. </param>
+		/// <param name="default_values"> 
+		/// 	<para> The default values. </para>
+		/// 	<para> The caller MUST ensure that the size of the number is the same as the
+		/// 	parameter passed in, otherwise a serious problem of out-of-bounds memory reads and writes
+		/// 	will occur. </para>
+		/// </param>
+		_CONSTEXPR_FN Matrix(const size_t row_size, const size_t col_size, _T default_values[])
+			: value_(Eigen::Map<base_type>(default_values, row_size, col_size)) {}
+
+		/// <summary> Initialize square Matrix in square size. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="edge_size"> Edge size of the square. </param>
+		_CONSTEXPR_FN Matrix(const size_t edge_size) _NOEXCEPT
+			: value_(base_type::Zero(edge_size, edge_size)) {}
+
+		/// <summary> Initialize square Matrix in square size with default values. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="edge_size"> Size of the square. </param>
+		/// <param name="default_values"> 
+		/// 	<para> The default values. </para>
+		/// 	<para> The caller MUST ensure that the size of the number is the same as the
+		/// 	parameter passed in, otherwise a serious problem of out-of-bounds memory reads and writes
+		/// 	will occur. </para>
+		/// </param>
+		_CONSTEXPR_FN Matrix(const size_t edge_size, _T default_values[])
+			: value_(Eigen::Map<base_type>(default_values, edge_size, edge_size)) {}
+
+		/// <summary> Copy constructor. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="other"> Other Matrix instance. </param>
+		_CONSTEXPR_FN Matrix(const Matrix& other) _NOEXCEPT
+			: value_(other.value_) {}
+
+		/// <summary> Copy assignment operator. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="other"> Other Matrix instance. </param>
+		/// <returns> A shallow copy of this. </returns>
+		_CONSTEXPR_FN Matrix& operator=(const Matrix& other) _NOEXCEPT {
+			value_ = other.value_;
+			return *this;
+		}
+
+		// Moving constructor and operator
+#if __cplusplus >= 201103L
+		/// <summary> Move constructor. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="other"> Other to be MOVED Matrix instance. </param>
+		_CONSTEXPR_FN Matrix(Matrix&& other) _NOEXCEPT
+			: value_(std::move(other.value_)) {}
+
+		/// <summary> Move assignment operator. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="other"> Other to be MOVED Matrix instance. </param>
+		/// <returns> A shallow copy of this. </returns>
+		_CONSTEXPR_FN Matrix& operator=(Matrix&& other) _NOEXCEPT {
+			value_ = std::move(other.value_);
+			return *this;
+		}
+#endif	// __cplusplus >= 201103L
+
+		~Matrix() _NOEXCEPT {}
 
 	public:
-		_CONSTEXPR_FN bool Init(const size_t row_size, const size_t col_size) {}
-		_CONSTEXPR_FN bool MakeUnitMatrix(const size_t square_size) {}
-		std::string ToString(const std::string& delim = " ", const bool line_break = true) {}
+		/// <summary>
+		/// 	<para> So called initializes. </para>
+		///		<para> Do not use this function to initialize Matrix, consider constructor to instead. </para>
+		///		<para> This function should be renamed to <c>resize</c>. </para>
+		/// </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="row_size"> Size of the row. </param>
+		/// <param name="col_size"> Size of the col. </param>
+		/// <returns> Intentionally always return true. </returns>
+		_CONSTEXPR_FN bool Init(const size_t row_size, const size_t col_size) _NOEXCEPT {
+			// Move constructor
+			value_ = base_type::Zero(row_size, col_size);
+			return true;
+		}
+
+		/// <summary> Makes unit matrix. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="edge_size"> Size of the edge. </param>
+		/// <returns> Intentionally always return true. </returns>
+		_CONSTEXPR_FN bool MakeUnitMatrix(const size_t edge_size) _NOEXCEPT {
+			// Move constructor
+			value_ = base_type::Identity(edge_size, edge_size);
+			return true;
+		}
+
+		/// <summary> Convert this into a string representation. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="delim">	  (Optional) The delimiter. </param>
+		/// <param name="line_break"> (Optional) True to line break. </param>
+		/// <returns> A std::string that represents this. </returns>
+		std::string ToString(const std::string& delim = " ", const bool line_break = true) _NOEXCEPT {
+			Eigen::IOFormat print_format(Eigen::FullPrecision, 0, delim, line_break ? "\n" : "");
+			std::stringstream ss;
+			ss << value_.format(print_format);
+			return ss.str();
+		}
 
 	public:
-		_CONSTEXPR_FN bool SetElement(const size_t row, const size_t col, _T value) {}
-		_CONSTEXPR_FN _T GetElement(const size_t row, const size_t col) const {}
-		_CONSTEXPR_FN void SetData(_T value[]) {}
-		_CONSTEXPR_FN size_t GetNumColumns() const {}
-		_CONSTEXPR_FN size_t GetNumRows() const {}
-		_CONSTEXPR_FN size_t GetRowVector(const size_t row, _T* row_element_list) const {}
-		_CONSTEXPR_FN size_t GetColVector(const size_t col, _T* row_element_list) const {}
-		_CONSTEXPR_FN _T* GetData() const {}
-		_CONSTEXPR_FN _T Max(size_t& row, size_t& col) {}
-		_CONSTEXPR_FN _T Max() const {}
-		_CONSTEXPR_FN _T Min(size_t& nRow, size_t& nCol) {}
-		_CONSTEXPR_FN _T Min() const {}
+		/// <summary> Sets an element. </summary>
+		/// <remarks> Blue Wing, 2020/3/15. </remarks>
+		/// <param name="row_index"> The row index. </param>
+		/// <param name="col_index"> The col index. </param>
+		/// <param name="value">	 The value. </param>
+		/// <returns> Intentionally always return true. </returns>
+		_CONSTEXPR_FN bool SetElement(const size_t row_index, const size_t col_index, _T value) _NOEXCEPT {
+			value_(row_index, col_index) = value;
+			return true;
+		}
 
-	public:
-		_CONSTEXPR_FN Matrix<_T> Transpose() const {}
-		_CONSTEXPR_FN Matrix<_T> Abs() const {}
-		_CONSTEXPR_FN Matrix<_T> Inv() const {}
-		_CONSTEXPR_FN Matrix<_T> Inv_Ssgj() const {}
-		_CONSTEXPR_FN Matrix<_T> InvertTriAngle() const {}
-		_CONSTEXPR_FN _T DetGauss() const {}
-		_CONSTEXPR_FN size_t RankGauss() const {}
+		/// <summary> Get particular item by index. </summary>
+		/// <remarks> Blue Wing, 2020/3/16. </remarks>
+		/// <param name="row_index"> Zero-based index of the row index. </param>
+		/// <param name="col_index"> Zero-based index of the col index. </param>
+		_CONSTEXPR_FN _T GetElement(const size_t row_index, const size_t col_index) const _NOEXCEPT {
+			return value_(row_index, col_index);
+		}
+
+		/// <summary> Gets number columns. </summary>
+		/// <remarks> Blue Wing, 2020/3/16. </remarks>
+		/// <returns> The number columns. </returns>
+		_CONSTEXPR_FN size_t GetNumColumns() const _NOEXCEPT {
+			return static_cast<size_t>(value_.cols());
+		}
+
+		/// <summary> Gets number rows. </summary>
+		/// <remarks> Blue Wing, 2020/3/16. </remarks>
+		/// <returns> The number rows. </returns>
+		_CONSTEXPR_FN size_t GetNumRows() const _NOEXCEPT {
+			return static_cast<size_t>(value_.rows());
+		}
+
+		/// <summary> Get the max item and coordinates. </summary>
+		/// <remarks> Blue Wing, 2020/3/16. </remarks>
+		/// <param name="row_index"> [in,out] Zero-based index of the row. </param>
+		/// <param name="col_index"> [in,out] Zero-based index of the col. </param>
+		_CONSTEXPR_FN _T Max(size_t& row_index, size_t& col_index) const _NOEXCEPT {
+			return value_.maxCoeff(static_cast<Eigen::Index>(row_index), static_cast<Eigen::Index>(col_index));
+		}
+
+		/// <summary> Get the max item. </summary>
+		/// <remarks> Blue Wing, 2020/3/16. </remarks>
+		_CONSTEXPR_FN _T Max() const _NOEXCEPT {
+			return value_.maxCoeff();
+		}
+
+		/// <summary> Get the min item and coordinates. </summary>
+		/// <remarks> Blue Wing, 2020/3/16. </remarks>
+		/// <param name="nRow"> [in,out] The row. </param>
+		/// <param name="nCol"> [in,out] The col. </param>
+		_CONSTEXPR_FN _T Min(size_t& nRow, size_t& nCol) const _NOEXCEPT {
+			return value_.minCoeff(static_cast<Eigen::Index>(row_index), static_cast<Eigen::Index>(col_index));
+		}
+
+		/// <summary> Get the min item. </summary>
+		/// <remarks> Blue Wing, 2020/3/16. </remarks>
+		_CONSTEXPR_FN _T Min() const _NOEXCEPT {
+			return value_.minCoeff();
+		}
+
+	//public:
+	//	_CONSTEXPR_FN Matrix<_T> Transpose() const {}
+	//	_CONSTEXPR_FN Matrix<_T> Abs() const {}
+	//	_CONSTEXPR_FN Matrix<_T> Inv() const {}
+	//	_CONSTEXPR_FN Matrix<_T> Inv_Ssgj() const {}
+	//	_CONSTEXPR_FN Matrix<_T> InvertTriAngle() const {}
+	//	_CONSTEXPR_FN _T DetGauss() const {}
+	//	_CONSTEXPR_FN size_t RankGauss() const {}
 
 	private:
 		base_type value_;	// The matrix value
