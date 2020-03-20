@@ -4,8 +4,12 @@
 #include <iostream>
 #include "matrix.h"
 
+#pragma warning(disable: 4996)
+
 int main() {
-	double value[] = { 3.0, 40.3251e222, 56556.3, -12.48 };
-	NUDTTK::Matrix<double> mt(2, value);
+	double value1[] = { 0.1, 0.2, 0.3, 0.4 };
+	double value2[] = { 2, 2, 2, 2 };
+	NUDTTK::Matrix<double> t1(2, value1), t2(2, value2);
+	NUDTTK::Matrix<double> t = t1 * 3;
 	return 0;
 }
