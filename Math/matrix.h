@@ -5,6 +5,7 @@
 
 #include "common.h"
 
+#include <map>
 #include <string>
 #include <sstream>
 
@@ -41,6 +42,7 @@
 #include <utility>
 #include <functional>
 #include <type_traits>
+#include <algorithm>
 #if __cplusplus >= 201703L
 #include <optional>
 #else	// __cplusplus < 201703L && __cplusplus >= 201103L
@@ -52,222 +54,6 @@
 #endif	// __cplusplus >= 201103L
 
 namespace NUDTTK {
-	// Return type traits
-#ifndef NOT_SUPPORT_LAZY_EVALUATION
-	// Main template
-	template <typename _F>
-	struct _return_type_impl;
-
-	// Partial specialization - regular functions
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args...)> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args..., ...)> { using type = _R; };
-
-	// Partial specialization - regular functions l-reference
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args...)&> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args..., ...)&> { using type = _R; };
-
-	// Partial specialization - regular functions r-reference
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args...)&&> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args..., ...)&&> { using type = _R; };
-
-	// Partial specialization - volatile regular functions
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args...) volatile> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args..., ...) volatile> { using type = _R; };
-
-	// Partial specialization - volatile regular functions l-reference
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args...) volatile&> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args..., ...) volatile&> { using type = _R; };
-
-	// Partial specialization - volatile regular functions r-reference
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args...) volatile&&> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(_Args..., ...) volatile&&> { using type = _R; };
-
-	// Partial specialization - regular function pointers
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(*)(_Args...)> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(*)(_Args..., ...)> { using type = _R; };
-
-	// Partial specialization - regular function l-references
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&)(_Args...)> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&)(_Args..., ...)> { using type = _R; };
-
-	// Partial specialization - regular function l-references l-references
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&)(_Args...)&> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&)(_Args..., ...)&> { using type = _R; };
-
-	// Partial specialization - regular function l-references r-references
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&)(_Args...)&&> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&)(_Args..., ...)&&> { using type = _R; };
-
-	// Partial specialization - regular function r-references
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&&)(_Args...)> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&&)(_Args..., ...)> { using type = _R; };
-
-	// Partial specialization - regular function r-references l-references
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&&)(_Args...)&> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&&)(_Args..., ...)&> { using type = _R; };
-
-	// Partial specialization - regular function r-references r-references
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&&)(_Args...)&&> { using type = _R; };
-	template <typename _R, typename... _Args>
-	struct _return_type_impl<_R(&&)(_Args..., ...)&&> { using type = _R; };
-
-	// Partial specialization - member functions
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...)> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...)> { using type = _R; };
-
-	// Partial specialization - member functions l-references
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...)&> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...)&> { using type = _R; };
-
-	// Partial specialization - member functions r-references
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...)&&> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...)&&> { using type = _R; };
-
-	// Partial specialization - const member functions
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...) const> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...) const> { using type = _R; };
-
-	// Partial specialization - const member functions l-references
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...) const&> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...) const&> { using type = _R; };
-
-	// Partial specialization - const member functions r-references
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...) const&&> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...) const&&> { using type = _R; };
-
-	// Partial specialization - volatile member functions
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...) volatile> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...) volatile> { using type = _R; };
-
-	// Partial specialization - volatile member functions l-references
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...) volatile&> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...) volatile&> { using type = _R; };
-
-	// Partial specialization - volatile member functions r-references
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...) volatile&&> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...) volatile&&> { using type = _R; };
-
-	// Partial specialization - const volatile member functions
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...) const volatile> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...) const volatile> { using type = _R; };
-
-	// Partial specialization - const volatile member functions l-references
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...) const volatile&> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...) const volatile&> { using type = _R; };
-
-	// Partial specialization - const volatile member functions r-references
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args...) const volatile&&> { using type = _R; };
-	template <typename _R, typename C, typename... _Args>
-	struct _return_type_impl<_R(C::*)(_Args..., ...) const volatile&&> { using type = _R; };
-
-	// Main template
-	template <typename _T, typename = void>
-	struct return_type
-		: _return_type_impl<_T> {};
-
-	// Functor specialization
-	template <typename _T>
-	struct return_type<_T, decltype(void(&_T::operator()))>
-		: _return_type_impl<decltype(&_T::operator())> {};
-
-	// return_type helper
-	template <typename _T>
-	using return_type_t = typename return_type<_T>::type;
-
-	// Function lazy evaluation wrapper
-	/// <summary> A lazy evaluate wrapper. </summary>
-	/// <remarks> Blue Wing, 2020/3/13. </remarks>
-	/// <typeparam name="_F">    Type of the function. </typeparam>
-	/// <typeparam name="_Args"> Type of the arguments. </typeparam>
-	template<typename _F, typename... _Args>
-	class lazy_evaluate {
-	public:
-		/// <summary> Constructor. </summary>
-		/// <remarks> Blue Wing, 2020/3/13. </remarks>
-		/// <param name="fn">	   [in] The function. </param>
-		/// <param name="...args"> [in] The argument passed in. </param>
-		_CONSTEXPR_FN lazy_evaluate(_F&& fn, _Args&& ...args) noexcept
-			: fn_(std::bind(std::forward<_F>(fn), std::forward<_Args>(args)...)) {}
-
-		/// <summary> Default constructor(disabled). </summary>
-		/// <remarks> Blue Wing, 2020/3/13. </remarks>
-		_CONSTEXPR_FN lazy_evaluate() noexcept = delete;
-
-	public:
-		/// <summary> Gets the value. </summary>
-		/// <remarks> Blue Wing, 2020/3/13. </remarks>
-		/// <returns> Value of the return type of the passed function </returns>
-		_CONSTEXPR_FN return_type_t<_F> value() noexcept {
-			if (value_)
-				return value_.value();
-			value_.emplace(std::move(fn_()));
-			return value_.value();
-		}
-
-		/// <summary> Resets the stored value. </summary>
-		/// <remarks> Blue Wing, 2020/3/13. </remarks>
-		_CONSTEXPR_FN void reset() noexcept {
-			value_.reset();
-		}
-
-	private:
-		std::function<return_type_t<_F>()>  fn_;		// Real running function
-#ifdef _OPTIONAL_	// Define in <optional>
-		std::optional<return_type_t<_F>> value_;		// Optional value
-#else
-		boost::optional<return_type_t<_F>> value_;		// Optional value
-#endif
-	};
-#endif // !NOT_SUPPORT_LAZY_EVALUATION
-
 
 	template<typename _T>
 	struct _scalar_support;
@@ -486,16 +272,16 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 			: value_(value) {}
 		CLS_UNUSED_CONSTRUCTOR(_scalar_support)
 
-		template<typename _Unused>
+			template<typename _Unused>
 		_CONSTEXPR_FN _T unwrap() const _NOEXCEPT {
 			return value_;
 		}
 	};
 
 	// Support operator + - with Matrix, * for both Matrix and scalar
-	CREATE_AND_COMBINE_BINARY_OP(add_op_impl, +, _non_scalar_support, Matrix)
-	CREATE_AND_COMBINE_BINARY_OP(sub_op_impl, -, _non_scalar_support, Matrix)
-	CREATE_AND_COMBINE_BINARY_OP(mul_op_impl, *, _scalar_support, Matrix)
+	CREATE_AND_COMBINE_BINARY_OP(add_op_impl, +, _non_scalar_support, Matrix);
+	CREATE_AND_COMBINE_BINARY_OP(sub_op_impl, -, _non_scalar_support, Matrix);
+	CREATE_AND_COMBINE_BINARY_OP(mul_op_impl, *, _scalar_support, Matrix);
 
 	/// <summary> A wrapper class for Eigen to support. </summary>
 	/// <remarks> Blue Wing, 2020/3/14. </remarks>
@@ -504,10 +290,10 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 	class Matrix {
 	public:
 		typedef Eigen::Matrix<_T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> base_type;
-		CLS_BINARY_OP(Matrix, base_type, value_, add_op_impl)
-		CLS_BINARY_OP(Matrix, base_type, value_, sub_op_impl)
-		CLS_BINARY_OP(Matrix, base_type, value_, mul_op_impl)
-		CLS_UNWRAP(Matrix, base_type, value_)
+		CLS_BINARY_OP(Matrix, base_type, value_, add_op_impl);
+		CLS_BINARY_OP(Matrix, base_type, value_, sub_op_impl);
+		CLS_BINARY_OP(Matrix, base_type, value_, mul_op_impl);
+		CLS_UNWRAP(Matrix, base_type, value_);
 
 	public:
 		/// <summary> Default constructor (no thing to do). </summary>
@@ -556,7 +342,11 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
 		/// <param name="other"> Other Matrix instance. </param>
 		_CONSTEXPR_FN Matrix(const Matrix& other) _NOEXCEPT
-			: value_(other.value_) {}
+			: value_(other.value_)
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			, lazy_value_map_(other.lazy_value_map_)
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
+		{}
 
 		/// <summary> Copy assignment operator. </summary>
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
@@ -564,6 +354,10 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <returns> A shallow copy of this. </returns>
 		_CONSTEXPR_FN Matrix& operator=(const Matrix& other) _NOEXCEPT {
 			value_ = other.value_;
+
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			lazy_value_map_ = other.lazy_value_map_;
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
 			return *this;
 		}
 
@@ -573,7 +367,11 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
 		/// <param name="other"> Other to be MOVED Matrix instance. </param>
 		_CONSTEXPR_FN Matrix(Matrix&& other) _NOEXCEPT
-			: value_(std::move(other.value_)) {}
+			: value_(std::move(other.value_))
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			, lazy_value_map_(std::move(other.lazy_value_map_))
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
+		{}
 
 		/// <summary> Move assignment operator. </summary>
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
@@ -581,6 +379,10 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <returns> A shallow copy of this. </returns>
 		_CONSTEXPR_FN Matrix& operator=(Matrix&& other) _NOEXCEPT {
 			value_ = std::move(other.value_);
+
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			lazy_value_map_ = std::move(other.lazy_value_map_);
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
 			return *this;
 		}
 #endif	// __cplusplus >= 201103L
@@ -600,6 +402,13 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		_CONSTEXPR_FN bool Init(const size_t row_size, const size_t col_size) _NOEXCEPT {
 			// Move constructor
 			value_ = base_type::Zero(row_size, col_size);
+
+			// Should update lazy evaluation values
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			std::for_each(lazy_value_map_.begin(), lazy_value_map_.end(),
+						  [&](value_t& lazy_value) {lazy_value.reset(); });
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
+
 			return true;
 		}
 
@@ -610,6 +419,13 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		_CONSTEXPR_FN bool MakeUnitMatrix(const size_t edge_size) _NOEXCEPT {
 			// Move constructor
 			value_ = base_type::Identity(edge_size, edge_size);
+
+			// Should update lazy evaluation values
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			std::for_each(lazy_value_map_.begin(), lazy_value_map_.end(),
+						  [&](value_t& lazy_value) {lazy_value.reset(); });
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
+
 			return true;
 		}
 
@@ -634,6 +450,13 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <returns> Intentionally always return true. </returns>
 		_CONSTEXPR_FN bool SetElement(const size_t row_index, const size_t col_index, _T value) _NOEXCEPT {
 			value_(row_index, col_index) = value;
+
+			// Should update lazy evaluation values
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			std::for_each(lazy_value_map_.begin(), lazy_value_map_.end(),
+						  [&](value_t& lazy_value) {lazy_value.reset(); });
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
+
 			return true;
 		}
 
@@ -664,7 +487,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <param name="row_index"> [in,out] Zero-based index of the row. </param>
 		/// <param name="col_index"> [in,out] Zero-based index of the col. </param>
 		_CONSTEXPR_FN _T Max(size_t& row_index, size_t& col_index) const _NOEXCEPT {
-			return value_.maxCoeff(static_cast<Eigen::Index>(row_index), static_cast<Eigen::Index>(col_index));
+			return value_.maxCoeff(&row_index, &col_index);
 		}
 
 		/// <summary> Get the max item. </summary>
@@ -678,7 +501,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <param name="nRow"> [in,out] The row. </param>
 		/// <param name="nCol"> [in,out] The col. </param>
 		_CONSTEXPR_FN _T Min(size_t& row_index, size_t& col_index) const _NOEXCEPT {
-			return value_.minCoeff(static_cast<Eigen::Index>(row_index), static_cast<Eigen::Index>(col_index));
+			return value_.minCoeff(&row_index, &col_index);
 		}
 
 		/// <summary> Get the min item. </summary>
@@ -689,34 +512,98 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 
 	public:
 
-		/*_CONSTEXPR_FN Matrix<_T> Transpose() const _NOEXCEPT {
-			return value_.transpose();
+		/// <summary> Gets the transpose. </summary>
+		/// <remarks> Blue Wing, 2020/3/21. </remarks>
+		/// <returns> A Matrix&lt;_T&gt; </returns>
+		_CONSTEXPR_FN Matrix<_T> Transpose() const _NOEXCEPT {
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			auto lazy_value = lazy_value_map_.at("tranpose_value");
+			if (!lazy_value) {
+				lazy_value = value_.transpose();
+			}
+			return Matrix<_T>(lazy_value.value());
+#else
+			return Matrix<_T>(value_.transpose());
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
 		}
 
+		/// <summary> Gets the abs. </summary>
+		/// <remarks> Blue Wing, 2020/3/21. </remarks>
+		/// <returns> A Matrix&lt;_T&gt; </returns>
 		_CONSTEXPR_FN Matrix<_T> Abs() const _NOEXCEPT {
-
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			auto lazy_value = lazy_value_map_.at("absolute_value");
+			if (!lazy_value) {
+				lazy_value = value_.cwiseAbs();
+			}
+			return Matrix<_T>(lazy_value.value());
+#else
+			return Matrix<_T>(value_.cwiseAbs());
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
 		}
 
+		/// <summary> Gets the inverse. </summary>
+		/// <remarks> Blue Wing, 2020/3/21. </remarks>
+		/// <returns> A Matrix&lt;_T&gt; </returns>
 		_CONSTEXPR_FN Matrix<_T> Inv() const _NOEXCEPT {
-
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			auto lazy_value = lazy_value_map_.at("inverse_value");
+			if (!lazy_value) {
+				Eigen::FullPivLU<base_type> lu(value_);
+				if (lu.isInvertible()) {
+					lazy_value = value_.inverse();
+					return Matrix<_T>(lazy_value.value());
+				} else {
+					return Matrix<_T>();
+				}
+			}
+#else
+			Eigen::FullPivLU<base_type> lu(value_);
+			if (lu.isInvertible()) {
+				return Matrix<_T>(value_.inverse());
+			} else {
+				return Matrix<_T>();
+			}
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
 		}
 
+		/// <summary> Inverse ssgj. </summary>
+		/// <remarks> Blue Wing, 2020/3/21. </remarks>
+		/// <returns> A Matrix&lt;_T&gt; </returns>
 		_CONSTEXPR_FN Matrix<_T> Inv_Ssgj() const _NOEXCEPT {
-
+			return Inv();
 		}
 
+		/// <summary> Get matrix determinant value. </summary>
+		/// <remarks> Blue Wing, 2020/3/21. </remarks>
+		/// <returns> Determinant value </returns>
 		_CONSTEXPR_FN _T DetGauss() const _NOEXCEPT {
-
-		}*/
+#ifndef NOT_SUPPORT_LAZY_EVALUATION
+			auto lazy_value = lazy_value_map_.at("determinant_value");
+			if (!lazy_value) {
+				lazy_value = value_.determinant();
+			}
+			return Matrix<_T>(lazy_value.value());
+#else
+			return Matrix<_T>(value_.determinant());
+#endif // !NOT_SUPPORT_LAZY_EVALUATION
+		}
 
 	private:
 		base_type value_;	// The matrix value
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
-		//lazy_evaluate lazy_absolute_;
-		//lazy_evaluate lazy_inverse_;
-		//lazy_evaluate lazy_inverse_positive_definite_;
-		//lazy_evaluate lazy_determinant_;
-#endif
+#ifdef _OPTIONAL_
+		using value_t = std::optional<Matrix<_T>::base_type>;
+#else	// BOOST_OPTIONAL_FLC_19NOV2002_HPP
+		using value_t = boost::optional<Matrix<_T>::base_type>;
+#endif	// _OPTIONAL_
+		std::map<std::string, value_t> lazy_value_map_{
+			{"tranpose_value", value_t()},
+			{"absolute_value", value_t()},
+			{"inverse_value", value_t()},
+			{"determinant_value", value_t()},
+		};
+#endif	// !NOT_SUPPORT_LAZY_EVALUATION
 	};
 }
 
