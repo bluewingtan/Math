@@ -282,6 +282,10 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 	CREATE_AND_COMBINE_BINARY_OP(add_op_impl, +, _non_scalar_support, Matrix);
 	CREATE_AND_COMBINE_BINARY_OP(sub_op_impl, -, _non_scalar_support, Matrix);
 	CREATE_AND_COMBINE_BINARY_OP(mul_op_impl, *, _scalar_support, Matrix);
+	CREATE_AND_COMBINE_BINARY_OP(div_op_impl, /, _scalar_support, Matrix);
+
+	// Epsilon value when check equality
+	_CONSTEXPR_FN double epsilon = 1e-7;
 
 	/// <summary> A wrapper class for Eigen to support. </summary>
 	/// <remarks> Blue Wing, 2020/3/14. </remarks>
@@ -293,6 +297,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		CLS_BINARY_OP(Matrix, base_type, value_, add_op_impl);
 		CLS_BINARY_OP(Matrix, base_type, value_, sub_op_impl);
 		CLS_BINARY_OP(Matrix, base_type, value_, mul_op_impl);
+		CLS_BINARY_OP(Matrix, base_type, value_, div_op_impl);
 		CLS_UNWRAP(Matrix, base_type, value_);
 
 	public:
@@ -341,7 +346,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <summary> Copy constructor. </summary>
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
 		/// <param name="other"> Other Matrix instance. </param>
-		_CONSTEXPR_FN Matrix(const Matrix& other) _NOEXCEPT
+		_CONSTEXPR_FN Matrix(const Matrix<_T>& other) _NOEXCEPT
 			: value_(other.value_)
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
 			, lazy_value_map_(other.lazy_value_map_)
@@ -352,7 +357,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
 		/// <param name="other"> Other Matrix instance. </param>
 		/// <returns> A shallow copy of this. </returns>
-		_CONSTEXPR_FN Matrix& operator=(const Matrix& other) _NOEXCEPT {
+		_CONSTEXPR_FN Matrix<_T>& operator=(const Matrix<_T>& other) _NOEXCEPT {
 			value_ = other.value_;
 
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
@@ -366,7 +371,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <summary> Move constructor. </summary>
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
 		/// <param name="other"> Other to be MOVED Matrix instance. </param>
-		_CONSTEXPR_FN Matrix(Matrix&& other) _NOEXCEPT
+		_CONSTEXPR_FN Matrix(Matrix<_T>&& other) _NOEXCEPT
 			: value_(std::move(other.value_))
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
 			, lazy_value_map_(std::move(other.lazy_value_map_))
@@ -377,7 +382,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
 		/// <param name="other"> Other to be MOVED Matrix instance. </param>
 		/// <returns> A shallow copy of this. </returns>
-		_CONSTEXPR_FN Matrix& operator=(Matrix&& other) _NOEXCEPT {
+		_CONSTEXPR_FN Matrix<_T>& operator=(Matrix<_T>&& other) _NOEXCEPT {
 			value_ = std::move(other.value_);
 
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
@@ -442,6 +447,29 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		}
 
 	public:
+		/// <summary> Equality operator. </summary>
+		/// <remarks> Blue Wing, 2020/3/21. </remarks>
+		/// <param name="other"> The other. </param>
+		/// <returns> True if the parameters are considered equivalent. </returns>
+		_CONSTEXPR_FN bool operator ==(const Matrix<_T>& other) const _NOEXCEPT {
+			if (other.value_.isZero()) {
+				// According to Eigen document, when other is Zero matrix, should use isMuchSmallerThan
+				// and given epsilon value
+				return value_.isMuchSmallerThan(other, epsilon);
+			} else {
+				// For matrices, the comparison is done using the Hilbert-Schmidt norm
+				return value_.isApprox(other);
+			}
+		}
+
+		/// <summary> Inequality operator. </summary>
+		/// <remarks> Blue Wing, 2020/3/21. </remarks>
+		/// <param name="other"> The other. </param>
+		/// <returns> True if the parameters are not considered equivalent. </returns>
+		_CONSTEXPR_FN bool operator !=(const Matrix<_T>& other) const _NOEXCEPT {
+			return !(*this == other);
+		}
+
 		/// <summary> Sets an element. </summary>
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
 		/// <param name="row_index"> The row index. </param>
