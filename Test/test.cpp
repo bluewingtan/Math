@@ -99,6 +99,50 @@ TEST(matrix_initialization, move_assignment) {
 	EXPECT_DOUBLE_EQ(mt2.GetElement(1, 0), 6.0);
 }
 
+TEST(matrix_initialization, value_copy_constructor) {
+	NUDTTK::Matrix<double>::base_type value(2, 2);
+	value << 4.0, 5.0, 6.0, 7.0;
+	NUDTTK::Matrix<double> mt(value);
+
+	EXPECT_EQ(mt.GetNumRows(), 2);
+	EXPECT_EQ(mt.GetNumColumns(), 2);
+	EXPECT_DOUBLE_EQ(mt.GetElement(0, 0), 4.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(1, 0), 6.0);
+}
+
+TEST(matrix_initialization, value_copy_assignment) {
+	NUDTTK::Matrix<double>::base_type value(2, 2);
+	value << 4.0, 5.0, 6.0, 7.0;
+	NUDTTK::Matrix<double> mt = value;
+
+	EXPECT_EQ(mt.GetNumRows(), 2);
+	EXPECT_EQ(mt.GetNumColumns(), 2);
+	EXPECT_DOUBLE_EQ(mt.GetElement(0, 0), 4.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(1, 0), 6.0);
+}
+
+TEST(matrix_initialization, value_move_constructor) {
+	NUDTTK::Matrix<double>::base_type value(2, 2);
+	value << 4.0, 5.0, 6.0, 7.0;
+	NUDTTK::Matrix<double> mt(std::move(value));
+
+	EXPECT_EQ(mt.GetNumRows(), 2);
+	EXPECT_EQ(mt.GetNumColumns(), 2);
+	EXPECT_DOUBLE_EQ(mt.GetElement(0, 0), 4.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(1, 0), 6.0);
+}
+
+TEST(matrix_initialization, value_move_assignment) {
+	NUDTTK::Matrix<double>::base_type value(2, 2);
+	value << 4.0, 5.0, 6.0, 7.0;
+	NUDTTK::Matrix<double> mt = std::move(value);
+
+	EXPECT_EQ(mt.GetNumRows(), 2);
+	EXPECT_EQ(mt.GetNumColumns(), 2);
+	EXPECT_DOUBLE_EQ(mt.GetElement(0, 0), 4.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(1, 0), 6.0);
+}
+
 TEST(matrix_operator, add_binary) {
 	double value1[] = { 0.1, 0.2, 0.3, 0.4 };
 	double value2[] = { 2.0, 2.0, 2.0, 2.0 };
@@ -233,6 +277,16 @@ TEST(matrix_operator, combination_operations) {
 	EXPECT_DOUBLE_EQ(mt.GetElement(1, 1), 13.0);
 }
 
+TEST(matrix_operator, compatibility_operations) {
+	double value1[] = { 3.0, 3.0, 3.0, 3.0 };
+	double value2[] = { 3.0, 3.0, 3.0, 3.0 };
+	NUDTTK::Matrix<double> mt1(2, value1);
+	NUDTTK::Matrix<double> mt2(2, value2);
+
+	EXPECT_TRUE(mt1 == mt2);
+	EXPECT_FALSE(mt1 != mt2);
+}
+
 TEST(matrix_function, absolute) {
 	double value[] = { -2.0, 2.0, 2.0, -2.0 };
 	NUDTTK::Matrix<double> mt(2, value);
@@ -240,17 +294,89 @@ TEST(matrix_function, absolute) {
 	
 	EXPECT_EQ(mt_abs.GetNumRows(), 2);
 	EXPECT_EQ(mt_abs.GetNumColumns(), 2);
-	EXPECT_EQ(mt_abs.GetElement(0, 0), 2.0);
-	EXPECT_EQ(mt_abs.GetElement(1, 1), 2.0);
+	EXPECT_DOUBLE_EQ(mt_abs.GetElement(0, 0), 2.0);
+	EXPECT_DOUBLE_EQ(mt_abs.GetElement(1, 1), 2.0);
 }
 
-TEST(matrix_function, absolute) {
-	double value[] = { -2.0, 2.0, 2.0, -2.0 };
+TEST(matrix_function, determinant) {
+	double value[] = { -1.5, 2.0, 2.5, 3.0 };
 	NUDTTK::Matrix<double> mt(2, value);
-	NUDTTK::Matrix<double> mt_abs(mt.Abs());
 
-	EXPECT_EQ(mt_abs.GetNumRows(), 2);
-	EXPECT_EQ(mt_abs.GetNumColumns(), 2);
-	EXPECT_EQ(mt_abs.GetElement(0, 0), 2.0);
-	EXPECT_EQ(mt_abs.GetElement(1, 1), 2.0);
+	EXPECT_DOUBLE_EQ(mt.DetGauss(), -9.5);
+}
+
+TEST(matrix_function, initialize) {
+	NUDTTK::Matrix<double> mt;
+	mt.Init(3, 3);
+	
+	EXPECT_EQ(mt.GetNumRows(), 3);
+	EXPECT_EQ(mt.GetNumColumns(), 3);
+	EXPECT_DOUBLE_EQ(mt.GetElement(0, 0), 0.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(1, 1), 0.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(2, 2), 0.0);
+}
+
+TEST(matrix_function, make_unit) {
+	NUDTTK::Matrix<double> mt;
+	mt.MakeUnitMatrix(3);
+
+	EXPECT_EQ(mt.GetNumRows(), 3);
+	EXPECT_EQ(mt.GetNumColumns(), 3);
+	EXPECT_DOUBLE_EQ(mt.GetElement(0, 0), 1.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(1, 1), 1.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(2, 2), 1.0);
+}
+
+TEST(matrix_function, inverse) {
+	double value[] = { -2.0, 1.0, 4.0, -3.0 };
+	NUDTTK::Matrix<double> mt(2, value);
+	NUDTTK::Matrix<double> mt_inv(mt.Inv());
+	// Inv_Ssgj is an alias of Inv
+
+	EXPECT_EQ(mt_inv.GetNumRows(), 2);
+	EXPECT_EQ(mt_inv.GetNumColumns(), 2);
+	EXPECT_DOUBLE_EQ(mt_inv.GetElement(0, 0), -1.5);
+	EXPECT_DOUBLE_EQ(mt_inv.GetElement(1, 1), -1.0);
+}
+
+TEST(matrix_function, max) {
+	double value[] = { -2.0, 1.0, 4.0, -3.0 };
+	NUDTTK::Matrix<double> mt(2, value);
+	size_t row_pos = 0, col_pos = 0;
+
+	EXPECT_DOUBLE_EQ(mt.Max(), 4.0);
+	EXPECT_DOUBLE_EQ(mt.Max(row_pos, col_pos), 4.0);
+	EXPECT_EQ(row_pos, 1);
+	EXPECT_EQ(col_pos, 0);
+}
+
+TEST(matrix_function, min) {
+	double value[] = { -2.0, 1.0, 4.0, -3.0 };
+	NUDTTK::Matrix<double> mt(2, value);
+	size_t row_pos = 0, col_pos = 0;
+
+	EXPECT_DOUBLE_EQ(mt.Min(), -3.0);
+	EXPECT_DOUBLE_EQ(mt.Min(row_pos, col_pos), -3.0);
+	EXPECT_EQ(row_pos, 1);
+	EXPECT_EQ(col_pos, 1);
+}
+
+TEST(matrix_function, set_element) {
+	double value[] = { -2.0, 1.0, 4.0, -3.0 };
+	NUDTTK::Matrix<double> mt(2, value);
+
+	EXPECT_DOUBLE_EQ(mt.GetElement(0, 1), 1.0);
+	mt.SetElement(0, 1, 5.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(0, 1), 5.0);
+}
+
+TEST(matrix_function, transpose) {
+	double value[] = { -2.0, 1.0, 4.0, -3.0 };
+	NUDTTK::Matrix<double> mt(2, value);
+	NUDTTK::Matrix<double> mt_t(mt.Transpose());
+
+	EXPECT_DOUBLE_EQ(mt.GetElement(0, 1), 1.0);
+	EXPECT_DOUBLE_EQ(mt_t.GetElement(0, 1), 4.0);
+	EXPECT_DOUBLE_EQ(mt.GetElement(1, 0), 4.0);
+	EXPECT_DOUBLE_EQ(mt_t.GetElement(1, 0), 1.0);
 }

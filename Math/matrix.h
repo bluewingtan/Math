@@ -44,8 +44,10 @@
 #include <type_traits>
 #include <algorithm>
 #if __cplusplus >= 201703L
+#include <any>
 #include <optional>
 #else	// __cplusplus < 201703L && __cplusplus >= 201103L
+#include <boost/any.hpp>
 #include <boost/optional.hpp>
 #endif	// __cplusplus >= 201703L
 #else	// __cplusplus < 201103L
@@ -309,7 +311,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 	CREATE_AND_COMBINE_BINARY_OP(add_op_impl, +, _non_scalar_support, _non_scalar_support);
 	CREATE_AND_COMBINE_BINARY_OP(sub_op_impl, -, _non_scalar_support, _non_scalar_support);
 	CREATE_AND_COMBINE_BINARY_OP(mul_op_impl, *, _scalar_support, _scalar_support);
-	CREATE_AND_COMBINE_BINARY_OP(div_op_impl, /, _non_scalar_support, _scalar_support);
+	CREATE_AND_COMBINE_BINARY_OP(div_op_impl, / , _non_scalar_support, _scalar_support);
 
 	// Epsilon value when check equality
 	_CONSTEXPR_FN double epsilon = 1e-7;
@@ -317,7 +319,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 	/// <summary> A wrapper class for Eigen to support. </summary>
 	/// <remarks> Blue Wing, 2020/3/14. </remarks>
 	/// <typeparam name="_T"> Type of the t. </typeparam>
-	template<typename _T>
+	template<typename _T = double>
 	class Matrix {
 	public:
 		typedef Eigen::Matrix<_T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> base_type;
@@ -380,6 +382,34 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 #endif // !NOT_SUPPORT_LAZY_EVALUATION
 		{}
 
+		/// <summary> Constructor. </summary>
+		/// <remarks> Blue Wing, 2020/3/22. </remarks>
+		/// <param name="value"> The value. </param>
+		_CONSTEXPR_FN Matrix(const base_type& value) _NOEXCEPT
+			: value_(value) {}
+
+		/// <summary> Constructor. </summary>
+		/// <remarks> Blue Wing, 2020/3/22. </remarks>
+		/// <param name="value"> The value. </param>
+		_CONSTEXPR_FN Matrix(base_type&& value) _NOEXCEPT
+			: value_(std::move(value)) {}
+
+		/// <summary> Constructor. </summary>
+		/// <remarks> Blue Wing, 2020/3/22. </remarks>
+		/// <param name="value"> The value. </param>
+		_CONSTEXPR_FN Matrix<_T>& operator=(const base_type& value) _NOEXCEPT {
+			value_ = value;
+			return *this;
+		}
+
+		/// <summary> Constructor. </summary>
+		/// <remarks> Blue Wing, 2020/3/22. </remarks>
+		/// <param name="value"> The value. </param>
+		_CONSTEXPR_FN Matrix<_T>& operator=(base_type&& value) _NOEXCEPT {
+			value_ = std::move(value);
+			return *this;
+		}
+
 		/// <summary> Copy assignment operator. </summary>
 		/// <remarks> Blue Wing, 2020/3/15. </remarks>
 		/// <param name="other"> Other Matrix instance. </param>
@@ -438,7 +468,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 			// Should update lazy evaluation values
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
 			std::for_each(lazy_value_map_.begin(), lazy_value_map_.end(),
-						  [&](value_t& lazy_value) {lazy_value.reset(); });
+						  [&](auto& lazy_value) {lazy_value.second.reset(); });
 #endif // !NOT_SUPPORT_LAZY_EVALUATION
 
 			return true;
@@ -455,7 +485,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 			// Should update lazy evaluation values
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
 			std::for_each(lazy_value_map_.begin(), lazy_value_map_.end(),
-						  [&](value_t& lazy_value) {lazy_value.reset(); });
+						  [&](auto& lazy_value) {lazy_value.second.reset(); });
 #endif // !NOT_SUPPORT_LAZY_EVALUATION
 
 			return true;
@@ -482,10 +512,10 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 			if (other.value_.isZero()) {
 				// According to Eigen document, when other is Zero matrix, should use isMuchSmallerThan
 				// and given epsilon value
-				return value_.isMuchSmallerThan(other, epsilon);
+				return value_.isMuchSmallerThan(other.value_, epsilon);
 			} else {
 				// For matrices, the comparison is done using the Hilbert-Schmidt norm
-				return value_.isApprox(other);
+				return value_.isApprox(other.value_);
 			}
 		}
 
@@ -509,7 +539,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 			// Should update lazy evaluation values
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
 			std::for_each(lazy_value_map_.begin(), lazy_value_map_.end(),
-						  [&](value_t& lazy_value) {lazy_value.reset(); });
+						  [&](auto& lazy_value) {lazy_value.second.reset(); });
 #endif // !NOT_SUPPORT_LAZY_EVALUATION
 
 			return true;
@@ -566,13 +596,12 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		}
 
 	public:
-
 		/// <summary> Gets the transpose. </summary>
 		/// <remarks> Blue Wing, 2020/3/21. </remarks>
 		/// <returns> A Matrix&lt;_T&gt; </returns>
-		_CONSTEXPR_FN Matrix<_T> Transpose() const _NOEXCEPT {
+		_CONSTEXPR_FN Matrix<_T> Transpose() _NOEXCEPT {
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
-			auto lazy_value = lazy_value_map_.at("tranpose_value");
+			auto& lazy_value = std::any_cast<value_t&>(lazy_value_map_.at("tranpose_value"));
 			if (!lazy_value) {
 				lazy_value = value_.transpose();
 			}
@@ -585,9 +614,9 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <summary> Gets the abs. </summary>
 		/// <remarks> Blue Wing, 2020/3/21. </remarks>
 		/// <returns> A Matrix&lt;_T&gt; </returns>
-		_CONSTEXPR_FN Matrix<_T> Abs() const _NOEXCEPT {
+		_CONSTEXPR_FN Matrix<_T> Abs() _NOEXCEPT {
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
-			auto lazy_value = lazy_value_map_.at("absolute_value");
+			auto& lazy_value = std::any_cast<value_t&>(lazy_value_map_.at("absolute_value"));
 			if (!lazy_value) {
 				lazy_value = value_.cwiseAbs();
 			}
@@ -600,9 +629,9 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <summary> Gets the inverse. </summary>
 		/// <remarks> Blue Wing, 2020/3/21. </remarks>
 		/// <returns> A Matrix&lt;_T&gt; </returns>
-		_CONSTEXPR_FN Matrix<_T> Inv() const _NOEXCEPT {
+		_CONSTEXPR_FN Matrix<_T> Inv() _NOEXCEPT {
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
-			auto lazy_value = lazy_value_map_.at("inverse_value");
+			auto& lazy_value = std::any_cast<value_t&>(lazy_value_map_.at("inverse_value"));
 			if (!lazy_value) {
 				Eigen::FullPivLU<base_type> lu(value_);
 				if (lu.isInvertible()) {
@@ -612,6 +641,7 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 					return Matrix<_T>();
 				}
 			}
+			return Matrix<_T>(lazy_value.value());
 #else
 			Eigen::FullPivLU<base_type> lu(value_);
 			if (lu.isInvertible()) {
@@ -632,15 +662,15 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <summary> Get matrix determinant value. </summary>
 		/// <remarks> Blue Wing, 2020/3/21. </remarks>
 		/// <returns> Determinant value </returns>
-		_CONSTEXPR_FN _T DetGauss() const _NOEXCEPT {
+		_CONSTEXPR_FN _T DetGauss() _NOEXCEPT {
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
-			auto lazy_value = lazy_value_map_.at("determinant_value");
+			auto& lazy_value = std::any_cast<scalar_t&>(lazy_value_map_.at("determinant_value"));
 			if (!lazy_value) {
 				lazy_value = value_.determinant();
 			}
-			return Matrix<_T>(lazy_value.value());
+			return lazy_value.value();
 #else
-			return Matrix<_T>(value_.determinant());
+			return value_.determinant();
 #endif // !NOT_SUPPORT_LAZY_EVALUATION
 		}
 
@@ -648,15 +678,18 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		base_type value_;	// The matrix value
 #ifndef NOT_SUPPORT_LAZY_EVALUATION
 #ifdef _OPTIONAL_
-		using value_t = std::optional<Matrix<_T>::base_type>;
+		using value_t = std::optional<base_type>;
+		using scalar_t = std::optional<_T>;
+		std::map<std::string, std::any> lazy_value_map_{
 #else	// BOOST_OPTIONAL_FLC_19NOV2002_HPP
 		using value_t = boost::optional<Matrix<_T>::base_type>;
+		using scalar_t = boost::optional<_T>;
+		std::map<std::string, boost::any> lazy_value_map_{
 #endif	// _OPTIONAL_
-		std::map<std::string, value_t> lazy_value_map_{
 			{"tranpose_value", value_t()},
 			{"absolute_value", value_t()},
 			{"inverse_value", value_t()},
-			{"determinant_value", value_t()},
+			{"determinant_value", scalar_t()}
 		};
 #endif	// !NOT_SUPPORT_LAZY_EVALUATION
 	};
