@@ -7,10 +7,13 @@
 #pragma warning(disable: 4996)
 
 int main() {
-	double value1[] = { 0.1, 0.2, 0.3, 0.4 };
+	double value1[] = { 1, 2, 3, 4 };
 	double value2[] = { 2, 2, 2, 2 };
-	NUDTTK::Matrix<double> t1(2, value1), t2(2, value2);
-	NUDTTK::Matrix<double> t = t1 * t2;
-	std::cout << t.unwrap();
+	double value3[] = { 3, 3, 3, 3 };
+	NUDTTK::Matrix<double> mt1(2, value1);
+	NUDTTK::Matrix<double> mt2(2, value2);
+	NUDTTK::Matrix<double> mt3(2, value3);
+	NUDTTK::Matrix<double> mt = (mt1 * mt2) + (mt3 * 6) / 2 - mt1;
+	std::cout << mt.GetElement(0, 0);
 	return 0;
 }

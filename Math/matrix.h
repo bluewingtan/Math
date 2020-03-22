@@ -129,112 +129,130 @@ private:																		\
 /// <param name="_scalar">   The scalar. </param>
 /// <param name="_wrapped">  The wrapped. </param>
 #ifdef _TYPE_TRAITS_
-#define COMBINE_IMPL_WITH_BINARY_OP(_impl, _operator, _scalar, _wrapped)					\
-template<typename _Lhs, typename _Rhs, typename _Element,									\
-		 typename std::enable_if<std::is_arithmetic<_Element>::value, int>::type = 0>		\
-_CONSTEXPR_FN _impl##<##_impl##<_Lhs, _Rhs>, _scalar##<_Element>>							\
-	operator _operator##(const _impl##<_Lhs, _Rhs>& lhs,									\
-						 const _Element& rhs) _NOEXCEPT {									\
-	return _impl##<##_impl##<_Lhs, _Rhs>, _scalar##<_Element>>(lhs, rhs);					\
-}																							\
-template<typename _Lhs, typename _Rhs, typename _Element,									\
-		 typename std::enable_if<!std::is_arithmetic<_Element>::value, int>::type = 0>		\
-_CONSTEXPR_FN _impl##<##_impl##<_Lhs, _Rhs>, _Element>										\
-	operator _operator##(const _impl##<_Lhs, _Rhs>& lhs,									\
-						 const _Element& rhs) _NOEXCEPT {									\
-	return _impl##<##_impl##<_Lhs, _Rhs>, _Element>(lhs, rhs);								\
-}																							\
-template<typename _Lhs, typename _Rhs, typename _Element,									\
-		 typename std::enable_if<std::is_arithmetic<_Element>::value, int>::type = 0>		\
-_CONSTEXPR_FN _impl##<##_scalar##<_Element>, _impl##<_Lhs, _Rhs>>							\
-	operator _operator##(const _Element& lhs,												\
-						 const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {						\
-	return _impl##<##_scalar##<_Element>, _impl##<_Lhs, _Rhs>>(lhs, rhs);					\
-}																							\
-template<typename _Lhs, typename _Rhs, typename _Element,									\
-		 typename std::enable_if<!std::is_arithmetic<_Element>::value, int>::type = 0>		\
-_CONSTEXPR_FN _impl##<_Element, _impl##<_Lhs, _Rhs>>										\
-	operator _operator##(const _Element& lhs,												\
-						 const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {						\
-	return _impl##<_Element, _impl##<_Lhs, _Rhs>>(lhs, rhs);								\
-}																							\
-template<typename _Lhs, typename _T,														\
-		 typename std::enable_if<std::is_arithmetic<_Lhs>::value, int>::type = 0>			\
-_CONSTEXPR_FN _impl##<##_scalar##<_Lhs>, _wrapped##<_T>>									\
-	operator _operator##(const _Lhs& lhs, const _wrapped##<_T>& rhs) _NOEXCEPT {			\
-	return _impl##<##_scalar##<_Lhs>, _wrapped##<_T>>(lhs, rhs);							\
-}																							\
-template<typename _Rhs, typename _T,														\
-		 typename std::enable_if<std::is_arithmetic<_Rhs>::value, int>::type = 0>			\
-_CONSTEXPR_FN _impl##<##_wrapped##<_T>, _scalar##<_Rhs>>									\
-	operator _operator##(const _wrapped##<_T>& lhs, const _Rhs& rhs) _NOEXCEPT {			\
-	return _impl##<_wrapped##<_T>, _scalar##<_Rhs>>(lhs, rhs);								\
-}																							\
-template<typename _T>																		\
-_CONSTEXPR_FN _impl##<##_wrapped##<_T>, _wrapped##<_T>>										\
-	operator _operator##(const _wrapped##<_T>& lhs,											\
-						 const _wrapped##<_T>& rhs) _NOEXCEPT {								\
-	return _impl##<##_wrapped##<_T>, _wrapped##<_T>>(lhs, rhs);								\
+#define COMBINE_IMPL_WITH_BINARY_OP(_impl, _operator, _scalar_left, _scalar_right)				\
+template<typename _Scalar, typename _T,															\
+	typename std::enable_if<std::is_arithmetic<_Scalar>::value									\
+	&& std::is_same<_scalar_support<_Scalar>, _scalar_left##<_Scalar>>::value, int>::type = 0>	\
+	_CONSTEXPR_FN _impl##<##_scalar_left##<_Scalar>, Matrix<_T>>								\
+	operator _operator##(const _Scalar& lhs, const Matrix<_T>& rhs) {							\
+	return _impl##<##_scalar_left##<_Scalar>, Matrix<_T>>(lhs, rhs);							\
+}																								\
+template<typename _Scalar, typename _Lhs, typename _Rhs,										\
+	template<typename _Lhs, typename _Rhs> typename _Impl,										\
+	typename std::enable_if<std::is_arithmetic<_Scalar>::value									\
+	&& std::is_same<_scalar_support<_Scalar>, _scalar_left##<_Scalar>>::value, int>::type = 0>	\
+	_CONSTEXPR_FN _impl##<##_scalar_left##<_Scalar>, _Impl<_Lhs, _Rhs>>							\
+	operator _operator##(const _Scalar& lhs, const _Impl<_Lhs, _Rhs>& rhs) {					\
+	return _impl##<##_scalar_left##<_Scalar>, _Impl<_Lhs, _Rhs>>(lhs, rhs);						\
+}																								\
+template<typename _Scalar, typename _T,															\
+	typename std::enable_if<std::is_arithmetic<_Scalar>::value									\
+	&& std::is_same<_scalar_support<_Scalar>, _scalar_right##<_Scalar>>::value, int>::type = 0>	\
+	_CONSTEXPR_FN _impl##<Matrix<_T>, _scalar_right##<_Scalar>>									\
+	operator _operator##(const Matrix<_T>& lhs, const _Scalar& rhs) {							\
+	return _impl##<Matrix<_T>, _scalar_right##<_Scalar>>(lhs, rhs);								\
+}																								\
+template<typename _Scalar, typename _Lhs, typename _Rhs,										\
+	template<typename _Lhs, typename _Rhs> typename _Impl,										\
+	typename std::enable_if<std::is_arithmetic<_Scalar>::value									\
+	&& std::is_same<_scalar_support<_Scalar>, _scalar_right##<_Scalar>>::value, int>::type = 0>	\
+	_CONSTEXPR_FN _impl##<_Impl<_Lhs, _Rhs>, _scalar_right##<_Scalar>>							\
+	operator _operator##(const _Impl<_Lhs, _Rhs>& lhs, const _Scalar& rhs) {					\
+	return _impl##<_Impl<_Lhs, _Rhs>, _scalar_right##<_Scalar>>(lhs, rhs);						\
+}																								\
+template<typename _T>																			\
+_CONSTEXPR_FN _impl##<Matrix<_T>, Matrix<_T>>													\
+	operator _operator##(const Matrix<_T>& lhs, const Matrix<_T>& rhs) {						\
+	return _impl##<Matrix<_T>, Matrix<_T>>(lhs, rhs);											\
+}																								\
+template<typename _T, typename _Lhs, typename _Rhs,												\
+	template<typename _Lhs, typename _Rhs> typename _Impl>										\
+_CONSTEXPR_FN _impl##<Matrix<_T>, _Impl<_Lhs, _Rhs>>											\
+	operator _operator##(const Matrix<_T>& lhs, const _Impl<_Lhs, _Rhs>& rhs) {					\
+	return _impl##<Matrix<_T>, _Impl<_Lhs, _Rhs>>(lhs, rhs);									\
+}																								\
+template<typename _T, typename _Lhs, typename _Rhs,												\
+	template<typename _Lhs, typename _Rhs> typename _Impl>										\
+_CONSTEXPR_FN _impl##<_Impl<_Lhs, _Rhs>, Matrix<_T>>											\
+	operator _operator##(const _Impl<_Lhs, _Rhs>& lhs, const Matrix<_T>& rhs) {					\
+	return _impl##<_Impl<_Lhs, _Rhs>, Matrix<_T>>(lhs, rhs);									\
+}																								\
+template<typename _Lhs_l, typename _Rhs_l, typename _Lhs_r, typename _Rhs_r,					\
+	template<typename _Lhs_l, typename _Rhs_l> typename _Impl_l,								\
+	template<typename _Lhs_r, typename _Rhs_r> typename _Impl_r>								\
+_CONSTEXPR_FN _impl##<_Impl_l<_Lhs_l, _Rhs_l>, _Impl_r<_Lhs_r, _Rhs_r>>							\
+	operator _operator##(const _Impl_l<_Lhs_l, _Rhs_l>& lhs,									\
+						 const _Impl_r<_Lhs_r, _Rhs_r>& rhs) {									\
+	return _impl##<_Impl_l<_Lhs_l, _Rhs_l>, _Impl_r<_Lhs_r, _Rhs_r>>(lhs, rhs);					\
 }
 #else
-#define COMBINE_IMPL_WITH_BINARY_OP(_impl, _operator, _scalar, _wrapped)					\
-template<typename _Lhs, typename _Rhs, typename _Element,									\
-		 typename boost::enable_if_c<boost::is_arithmetic<_Element>::value, int>::type = 0>	\
-_CONSTEXPR_FN _impl##<##_impl##<_Lhs, _Rhs>, _scalar##<_Element>>							\
-	operator _operator##(const _impl##<_Lhs, _Rhs>& lhs,									\
-						 const _Element& rhs) _NOEXCEPT {									\
-	return _impl##<##_impl##<_Lhs, _Rhs>, _scalar##<_Element>>(lhs, rhs);					\
-}																							\
-template<typename _Lhs, typename _Rhs, typename _Element,									\
-		 typename boost::enable_if_c<!boost::is_arithmetic<_Element>::value, int>::type = 0>\
-_CONSTEXPR_FN _impl##<##_impl##<_Lhs, _Rhs>, _Element>										\
-	operator _operator##(const _impl##<_Lhs, _Rhs>& lhs,									\
-						 const _Element& rhs) _NOEXCEPT {									\
-	return _impl##<##_impl##<_Lhs, _Rhs>, _Element>(lhs, rhs);								\
-}																							\
-template<typename _Lhs, typename _Rhs, typename _Element,									\
-		 typename boost::enable_if_c<boost::is_arithmetic<_Element>::value, int>::type = 0>	\
-_CONSTEXPR_FN _impl##<##_scalar##<_Element>, _impl##<_Lhs, _Rhs>>							\
-	operator _operator##(const _Element& lhs,												\
-						 const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {						\
-	return _impl##<##_scalar##<_Element>, _impl##<_Lhs, _Rhs>>(lhs, rhs);					\
-}																							\
-template<typename _Lhs, typename _Rhs, typename _Element,									\
-		 typename boost::enable_if_c<!boost::is_arithmetic<_Element>::value, int>::type = 0>\
-_CONSTEXPR_FN _impl##<_Element, _impl##<_Lhs, _Rhs>>										\
-	operator _operator##(const _Element& lhs,												\
-						 const _impl##<_Lhs, _Rhs>& rhs) _NOEXCEPT {						\
-	return _impl##<_Element, _impl##<_Lhs, _Rhs>>(lhs, rhs);								\
-}																							\
-template<typename _Lhs, typename _T,														\
-		 typename boost::enable_if_c<boost::is_arithmetic<_Lhs>::value, int>::type = 0>		\
-_CONSTEXPR_FN _impl##<##_scalar##<_Lhs>, _wrapped##<_T>>									\
-	operator _operator##(const _Lhs& lhs, const _wrapped##<_T>& rhs) _NOEXCEPT {			\
-	return _impl##<##_scalar##<_Lhs>, _wrapped##<_T>>(lhs, rhs);							\
-}																							\
-template<typename _Rhs, typename _T,														\
-		 typename boost::enable_if_c<boost::is_arithmetic<_Rhs>::value, int>::type = 0>		\
-_CONSTEXPR_FN _impl##<##_wrapped##<_T>, _scalar##<_Rhs>>									\
-	operator _operator##(const _wrapped##<_T>& lhs, const _Rhs& rhs) _NOEXCEPT {			\
-	return _impl##<_wrapped##<_T>, _scalar##<_Rhs>>(lhs, rhs);								\
-}																							\
-template<typename _T>																		\
-_CONSTEXPR_FN _impl##<##_wrapped##<_T>, _wrapped##<_T>>										\
-	operator _operator##(const _wrapped##<_T>& lhs,											\
-						 const _wrapped##<_T>& rhs) _NOEXCEPT {								\
-	return _impl##<##_wrapped##<_T>, _wrapped##<_T>>(lhs, rhs);								\
+#define COMBINE_IMPL_WITH_BINARY_OP(_impl, _operator, _scalar_left, _scalar_right)				\
+template<typename _Scalar, typename _T,															\
+	typename boost::enable_if_c<boost::is_arithmetic<_Scalar>::value							\
+	&& boost::is_same<_scalar_support<_Scalar>, _scalar_left##<_Scalar>>::value, int>::type = 0>\
+	_CONSTEXPR_FN _impl##<##_scalar_left##<_Scalar>, Matrix<_T>>								\
+	operator _operator##(const _Scalar& lhs, const Matrix<_T>& rhs) {							\
+	return _impl##<##_scalar_left##<_Scalar>, Matrix<_T>>(lhs, rhs);							\
+}																								\
+template<typename _Scalar, typename _Lhs, typename _Rhs,										\
+	template<typename _Lhs, typename _Rhs> typename _Impl,										\
+	typename boost::enable_if_c<boost::is_arithmetic<_Scalar>::value							\
+	&& boost::is_same<_scalar_support<_Scalar>, _scalar_left##<_Scalar>>::value, int>::type = 0>\
+	_CONSTEXPR_FN _impl##<##_scalar_left##<_Scalar>, _Impl<_Lhs, _Rhs>>							\
+	operator _operator##(const _Scalar& lhs, const _Impl<_Lhs, _Rhs>& rhs) {					\
+	return _impl##<##_scalar_left##<_Scalar>, _Impl<_Lhs, _Rhs>>(lhs, rhs);						\
+}																								\
+template<typename _Scalar, typename _T,															\
+	typename boost::enable_if_c<boost::is_arithmetic<_Scalar>::value							\
+	&& boost::is_same<_scalar_support<_Scalar>, _scalar_right##<_Scalar>>::value, int>::type = 0>\
+	_CONSTEXPR_FN _impl##<Matrix<_T>, _scalar_right##<_Scalar>>									\
+	operator _operator##(const Matrix<_T>& lhs, const _Scalar& rhs) {							\
+	return _impl##<Matrix<_T>, _scalar_right##<_Scalar>>(lhs, rhs);								\
+}																								\
+template<typename _Scalar, typename _Lhs, typename _Rhs,										\
+	template<typename _Lhs, typename _Rhs> typename _Impl,										\
+	typename boost::enable_if_c<boost::is_arithmetic<_Scalar>::value							\
+	&& boost::is_same<_scalar_support<_Scalar>, _scalar_right##<_Scalar>>::value, int>::type = 0>\
+	_CONSTEXPR_FN _impl##<_Impl<_Lhs, _Rhs>, _scalar_right##<_Scalar>>							\
+	operator _operator##(const _Impl<_Lhs, _Rhs>& lhs, const _Scalar& rhs) {					\
+	return _impl##<_Impl<_Lhs, _Rhs>, _scalar_right##<_Scalar>>(lhs, rhs);						\
+}																								\
+template<typename _T>																			\
+_CONSTEXPR_FN _impl##<Matrix<_T>, Matrix<_T>>													\
+	operator _operator##(const Matrix<_T>& lhs, const Matrix<_T>& rhs) {						\
+	return _impl##<Matrix<_T>, Matrix<_T>>(lhs, rhs);											\
+}																								\
+template<typename _T, typename _Lhs, typename _Rhs,												\
+	template<typename _Lhs, typename _Rhs> typename _Impl>										\
+_CONSTEXPR_FN _impl##<Matrix<_T>, _Impl<_Lhs, _Rhs>>											\
+	operator _operator##(const Matrix<_T>& lhs, const _Impl<_Lhs, _Rhs>& rhs) {					\
+	return _impl##<Matrix<_T>, _Impl<_Lhs, _Rhs>>(lhs, rhs);									\
+}																								\
+template<typename _T, typename _Lhs, typename _Rhs,												\
+	template<typename _Lhs, typename _Rhs> typename _Impl>										\
+_CONSTEXPR_FN _impl##<_Impl<_Lhs, _Rhs>, Matrix<_T>>											\
+	operator _operator##(const _Impl<_Lhs, _Rhs>& lhs, const Matrix<_T>& rhs) {					\
+	return _impl##<_Impl<_Lhs, _Rhs>, Matrix<_T>>(lhs, rhs);									\
+}																								\
+template<typename _Lhs_l, typename _Rhs_l, typename _Lhs_r, typename _Rhs_r,					\
+	template<typename _Lhs_l, typename _Rhs_l> typename _Impl_l,								\
+	template<typename _Lhs_r, typename _Rhs_r> typename _Impl_r>								\
+_CONSTEXPR_FN _impl##<_Impl_l<_Lhs_l, _Rhs_l>, _Impl_r<_Lhs_r, _Rhs_r>>							\
+	operator _operator##(const _Impl_l<_Lhs_l, _Rhs_l>& lhs,									\
+						 const _Impl_r<_Lhs_r, _Rhs_r>& rhs) {									\
+	return _impl##<_Impl_l<_Lhs_l, _Rhs_l>, _Impl_r<_Lhs_r, _Rhs_r>>(lhs, rhs);					\
 }
 #endif // _TYPE_TRAITS_
 
-/// <summary> A macro that defines create and combine binary operation. </summary>
-/// <remarks> Blue Wing, 2020/3/15. </remarks>
-/// <param name="_impl">	 The implementation name. </param>
-/// <param name="_operator"> The operator. </param>
-/// <param name="_scalar">   The scalar. </param>
-/// <param name="_wrapped">  The wrapped. </param>
-#define CREATE_AND_COMBINE_BINARY_OP(_impl, _operator, _scalar, _wrapped)		\
-CREATE_BINARY_OP_IMPL(_impl, _operator)											\
-COMBINE_IMPL_WITH_BINARY_OP(_impl, _operator, _scalar, _wrapped)
+	/// <summary> A macro that defines create and combine binary operation. </summary>
+	/// <remarks> Blue Wing, 2020/3/15. </remarks>
+	/// <param name="_impl">	 The implementation name. </param>
+	/// <param name="_operator"> The operator. </param>
+	/// <param name="_scalar">   The scalar. </param>
+	/// <param name="_wrapped">  The wrapped. </param>
+#define CREATE_AND_COMBINE_BINARY_OP(_impl, _operator, _scalar_support_left, _scalar_support_right)	\
+CREATE_BINARY_OP_IMPL(_impl, _operator)																\
+COMBINE_IMPL_WITH_BINARY_OP(_impl, _operator, _scalar_support_left, _scalar_support_right)
 
 /// <summary> A macro that defines class member binary operation function. </summary>
 /// <remarks> Blue Wing, 2020/3/14. </remarks>
@@ -248,8 +266,17 @@ _CONSTEXPR_FN _class_name##(const _impl##<Lhs, Rhs>& op) _NOEXCEPT {			\
 	_variable_name = op.unwrap<##_return_type##>();								\
 }																				\
 template<typename Lhs, typename Rhs>											\
+_CONSTEXPR_FN _class_name##(_impl##<Lhs, Rhs>&& op) _NOEXCEPT {					\
+	_variable_name = std::move(op.unwrap<##_return_type##>());					\
+}																				\
+template<typename Lhs, typename Rhs>											\
 _CONSTEXPR_FN _class_name##& operator=(const _impl##<Lhs, Rhs>& op) _NOEXCEPT {	\
 	_variable_name = op.unwrap<##_return_type##>();								\
+	return *this;																\
+}																				\
+template<typename Lhs, typename Rhs>											\
+_CONSTEXPR_FN _class_name##& operator=(_impl##<Lhs, Rhs>&& op) _NOEXCEPT {		\
+	_variable_name = std::move(op.unwrap<##_return_type##>());					\
 	return *this;																\
 }
 
@@ -279,10 +306,10 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 	};
 
 	// Support operator + - with Matrix, * for both Matrix and scalar
-	CREATE_AND_COMBINE_BINARY_OP(add_op_impl, +, _non_scalar_support, Matrix);
-	CREATE_AND_COMBINE_BINARY_OP(sub_op_impl, -, _non_scalar_support, Matrix);
-	CREATE_AND_COMBINE_BINARY_OP(mul_op_impl, *, _scalar_support, Matrix);
-	CREATE_AND_COMBINE_BINARY_OP(div_op_impl, /, _scalar_support, Matrix);
+	CREATE_AND_COMBINE_BINARY_OP(add_op_impl, +, _non_scalar_support, _non_scalar_support);
+	CREATE_AND_COMBINE_BINARY_OP(sub_op_impl, -, _non_scalar_support, _non_scalar_support);
+	CREATE_AND_COMBINE_BINARY_OP(mul_op_impl, *, _scalar_support, _scalar_support);
+	CREATE_AND_COMBINE_BINARY_OP(div_op_impl, /, _non_scalar_support, _scalar_support);
 
 	// Epsilon value when check equality
 	_CONSTEXPR_FN double epsilon = 1e-7;
