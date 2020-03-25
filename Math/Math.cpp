@@ -2,12 +2,17 @@
 //
 
 #include <iostream>
-#include "matrix.h"
 
 #pragma warning(disable: 4996)
 
+#include "matrix.h"
+#include "math_algorithm.h"
+
+
 int main() {
-	NUDTTK::Matrix mt(3, 3);
-	std::cout << mt.ToString();
+	Eigen::Matrix2d d1, d2;
+	d1 << 1, 2, 3, 4;
+	d2 << 2, 3, 4, 5;
+	(d1 + d2).maxCoeff();
 	return 0;
 }
