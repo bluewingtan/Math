@@ -9,6 +9,13 @@
 #include <string>
 #include <sstream>
 
+#include <mkl.h>
+
+// Check Intel MKL installation and enable eigen optimization
+#if __INTEL_MKL__
+#define EIGEN_USE_MKL_ALL	// Using MKL optimization
+#endif // __INTEL_MKL__
+
 // Check compiler version required
 #ifdef _MSC_VER				// MSVC
 #if _MSC_VER < 1500
@@ -550,6 +557,14 @@ _CONSTEXPR_FN _U unwrap() const _NOEXCEPT {										\
 		/// <param name="row_index"> Zero-based index of the row index. </param>
 		/// <param name="col_index"> Zero-based index of the col index. </param>
 		_CONSTEXPR_FN _T GetElement(const size_t row_index, const size_t col_index) const _NOEXCEPT {
+			return value_(row_index, col_index);
+		}
+
+		/// <summary> Function call operator. </summary>
+		/// <remarks> Blue Wing, 2020/4/14. </remarks>
+		/// <param name="row_index"> Zero-based index of the row. </param>
+		/// <param name="col_index"> Zero-based index of the col. </param>
+		_T& operator()(const size_t row_index, const size_t col_index) _NOEXCEPT {
 			return value_(row_index, col_index);
 		}
 

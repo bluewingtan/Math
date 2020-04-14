@@ -287,6 +287,15 @@ TEST(matrix_operator, compatibility_operations) {
 	EXPECT_FALSE(mt1 != mt2);
 }
 
+TEST(matrix_operator, operator_rw_operations) {
+	double value[] = { -2.0, 2.0, 2.0, -2.0 };
+	NUDTTK::Matrix<double> mt(2, value);
+
+	EXPECT_DOUBLE_EQ(mt(1, 1), -2.0);
+	mt(1, 1) = 1.0;
+	EXPECT_DOUBLE_EQ(mt(1, 1), 1.0);
+}
+
 TEST(matrix_function, absolute) {
 	double value[] = { -2.0, 2.0, 2.0, -2.0 };
 	NUDTTK::Matrix<double> mt(2, value);

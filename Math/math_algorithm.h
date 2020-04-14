@@ -451,15 +451,15 @@ namespace NUDTTK {
 				base[i] = x[i] - x[0];
 
 			for (size_t i = 0; i < n; i++) {
-				matY.SetElement(i, 0, y[i]);
-				matC.SetElement(i, 0, 1.0);
+				matY(i, 0) = y[i];
+				matC(i, 0) = 1.0;
 				for (size_t j = 1; j < m; j++)
-					matC.SetElement(i, j, std::pow(base[i], j));
+					matC(i, j) = std::pow(base[i], j);
 			}
 			Matrix matS = Matrix(matC.Transpose() * matC).Inv() * matC.Transpose() * matY;
 			Matrix matY_Fit = matC * matS;
 			for (size_t i = 0; i < n; i++)
-				y_fit[i] = matY_Fit.GetElement(i, 0);
+				y_fit[i] = matY_Fit(i, 0);
 
 			return true;
 		}
@@ -484,18 +484,18 @@ namespace NUDTTK {
 			double eps = eps_v * (x[n - 2] - x[1]) / (n - 3);
 			Matrix matABCD(4, n - 3);
 			for (size_t i = 0; i < n - 3; i++) {
-				double a = 6 * sqrt(x[i + 2] - x[i + 1]) / ((x[i] - x[i + 1]) * (x[i] - x[i + 2]) * (x[i] - x[i + 3]));
-				double b = 6 * sqrt(x[i + 2] - x[i + 1]) / ((x[i + 1] - x[i]) * (x[i + 1] - x[i + 2]) * (x[i + 1] - x[i + 3]));
-				double c = 6 * sqrt(x[i + 2] - x[i + 1]) / ((x[i + 2] - x[i]) * (x[i + 2] - x[i + 1]) * (x[i + 2] - x[i + 3]));
-				double d = 6 * sqrt(x[i + 2] - x[i + 1]) / ((x[i + 3] - x[i]) * (x[i + 3] - x[i + 1]) * (x[i + 3] - x[i + 2]));
-				matABCD.SetElement(0, i, a);
-				matABCD.SetElement(1, i, b);
-				matABCD.SetElement(2, i, c);
-				matABCD.SetElement(3, i, d);
+				double a = 6 * std::sqrt(x[i + 2] - x[i + 1]) / ((x[i] - x[i + 1]) * (x[i] - x[i + 2]) * (x[i] - x[i + 3]));
+				double b = 6 * std::sqrt(x[i + 2] - x[i + 1]) / ((x[i + 1] - x[i]) * (x[i + 1] - x[i + 2]) * (x[i + 1] - x[i + 3]));
+				double c = 6 * std::sqrt(x[i + 2] - x[i + 1]) / ((x[i + 2] - x[i]) * (x[i + 2] - x[i + 1]) * (x[i + 2] - x[i + 3]));
+				double d = 6 * std::sqrt(x[i + 2] - x[i + 1]) / ((x[i + 3] - x[i]) * (x[i + 3] - x[i + 1]) * (x[i + 3] - x[i + 2]));
+				matABCD(0, i) = a;
+				matABCD(1, i) = b;
+				matABCD(2, i) = c;
+				matABCD(3, i) = d;
 			}
 			Matrix matY(n, 1);
 			for (size_t i = 0; i < n; i++)
-				matY.SetElement(i, 0, y[i] * w[i] * eps); /*Y = (X(2,:).*P)'.*e;*/
+				matY(i, 0) = y[i] * w[i] * eps; /*Y = (X(2,:).*P)'.*e;*/
 
 			Matrix matA(7, n);
 			/* Seven-diagonal matrix, using a 7-row structure to record
@@ -518,12 +518,12 @@ namespace NUDTTK {
 			*/
 
 			for (size_t j = 0; j < n; j++) {
-				matA.SetElement(3, j, w[j] * eps);
+				matA(3, j) = w[j] * eps;
 				for (size_t i = j; i >= j - 3; i--) {
 					int nCount = j - i;
 					if (i >= 0 && i <= n - 4) {
 						// Make sure [0, n-4]
-						matA.SetElement(3, j, matA.GetElement(3, j) + pow(matABCD.GetElement(nCount, i), 2));
+						matA(3, j ) = matA(3, j) + std::pow(matABCD(nCount, i), 2);
 					}
 				}
 				// A_1j--> matA(4,:)
@@ -531,7 +531,7 @@ namespace NUDTTK {
 					int nCount = j - i;
 					if (i >= 0 && i <= n - 4) {
 						// Make sure [0, n-4]
-						matA.SetElement(4, j + 1, matA.GetElement(4, j + 1) + matABCD.GetElement(nCount, i) * matABCD.GetElement(nCount + 1, i));
+						matA(4, j + 1) = matA(4, j + 1) + matABCD(nCount, i) * matABCD(nCount + 1, i);
 					}
 				}
 				// A_2j--> matA(5,:)
@@ -539,19 +539,19 @@ namespace NUDTTK {
 					int nCount = j - i;
 					if (i >= 0 && i <= n - 4) {
 						// Make sure [0, n-4]
-						matA.SetElement(5, j + 2, matA.GetElement(5, j + 2) + matABCD.GetElement(nCount, i) * matABCD.GetElement(nCount + 2, i));
+						matA(5, j + 2) = matA(5, j + 2) + matABCD(nCount, i) * matABCD(nCount + 2, i);
 					}
 				}
 				// A_3j--> matA(6,:)
 				if (j <= n - 4) {
-					matA.SetElement(6, j + 3, matABCD.GetElement(0, j) * matABCD.GetElement(3, j));
+					matA(6, j + 3) = matABCD(0, j) * matABCD(3, j);
 				}
 				// A_-1j--> matA(2,:)
 				for (size_t i = j - 1; i >= j - 3; i--) {
 					int nCount = j - 1 - i;
 					if (i >= 0 && i <= n - 4) {
 						// Make sure [0, n-4]
-						matA.SetElement(2, j - 1, matA.GetElement(2, j - 1) + matABCD.GetElement(nCount, i) * matABCD.GetElement(nCount + 1, i));
+						matA(2, j - 1) = matA(2, j - 1) + matABCD(nCount, i) * matABCD(nCount + 1, i);
 					}
 				}
 				// A_-2j--> matA(1,:)
@@ -559,13 +559,13 @@ namespace NUDTTK {
 					int nCount = j - 2 - i;
 					if (i >= 0 && i <= n - 4) {
 						// Make sure [0, n-4]
-						matA.SetElement(1, j - 2, matA.GetElement(1, j - 2) + matABCD.GetElement(nCount, i) * matABCD.GetElement(nCount + 2, i));
+						matA(1, j - 2) = matA(1, j - 2) + matABCD(nCount, i) * matABCD(nCount + 2, i);
 					}
 				}
 				// A_-3j--> matA(0,:)
 				if (j - 3 >= 0 && j - 3 <= n - 4) {
-					//matA.SetElement(j,j-3,matABCD.GetElement(0,j-3)*matABCD.GetElement(3,j-3));
-					matA.SetElement(0, j - 3, matABCD.GetElement(0, j - 3) * matABCD.GetElement(3, j - 3));
+					//matA.SetElement(j,j-3,matABCD(0,j-3)*matABCD(3,j-3));
+					matA(0, j - 3) = matABCD(0, j - 3) * matABCD(3, j - 3);
 				}
 			}
 
@@ -573,36 +573,36 @@ namespace NUDTTK {
 			// Chasing method for solving 7-diagonal linear equations
 			for (size_t i = 0; i < n - 1; i++) {
 				// Unitize by diagonal elements
-				double element_ii = matA.GetElement(3, i);
-				matY.SetElement(i, 0, matY.GetElement(i, 0) / element_ii);
+				double element_ii = matA(3, i);
+				matY(i, 0) = matY(i, 0) / element_ii;
 				for (size_t k = i; k < n; k++) {
 					if (3 - (i - k) <= 6) {
-						matA.SetElement(3 - (i - k), k, matA.GetElement(3 - (i - k), k) / element_ii);
+						matA(3 - (i - k), k) = matA(3 - (i - k), k) / element_ii;
 					}
 				}
 
 				size_t N = (i + 3 < n - 1) ? i + 3 : n - 1;
 				for (size_t j = i + 1; j <= N; j++) {
 					// Elimination is performed line by line, with a maximum of 3 lines
-					double element_ji = matA.GetElement(3 - (j - i), i);
-					matY.SetElement(j, 0, matY.GetElement(j, 0) - element_ji * matY.GetElement(i, 0));
+					double element_ji = matA(3 - (j - i), i);
+					matY(j, 0) = matY(j, 0) - element_ji * matY(i, 0);
 					for (size_t k = i; k < n; k++) {
 						if (3 - (i - k) <= 6) {
-							matA.SetElement(3 - (j - k), k, matA.GetElement(3 - (j - k), k) - element_ji * matA.GetElement(3 - (i - k), k));
+							matA(3 - (j - k), k) = matA(3 - (j - k), k) - element_ji * matA(3 - (i - k), k);
 						}
 					}
 				}
 			}
 			// The last line
-			matY.SetElement(n - 1, 0, matY.GetElement(n - 1, 0) / matA.GetElement(3, n - 1));
-			matA.SetElement(3, n - 1, 1);
+			matY(n - 1, 0) = matY(n - 1, 0) / matA(3, n - 1);
+			matA(3, n - 1) = 1;
 			// Chase solution
-			y_fit[n - 1] = matY.GetElement(n - 1, 0);
-			y_fit[n - 2] = matY.GetElement(n - 2, 0) - matA.GetElement(4, n - 1) * y_fit[n - 1];
-			y_fit[n - 3] = matY.GetElement(n - 3, 0) - matA.GetElement(4, n - 2) * y_fit[n - 2] - matA.GetElement(5, n - 1) * y_fit[n - 1];
-			y_fit[n - 4] = matY.GetElement(n - 4, 0) - matA.GetElement(4, n - 3) * y_fit[n - 3] - matA.GetElement(5, n - 2) * y_fit[n - 2] - matA.GetElement(6, n - 1) * y_fit[n - 1];
+			y_fit[n - 1] = matY(n - 1, 0);
+			y_fit[n - 2] = matY(n - 2, 0) - matA(4, n - 1) * y_fit[n - 1];
+			y_fit[n - 3] = matY(n - 3, 0) - matA(4, n - 2) * y_fit[n - 2] - matA(5, n - 1) * y_fit[n - 1];
+			y_fit[n - 4] = matY(n - 4, 0) - matA(4, n - 3) * y_fit[n - 3] - matA(5, n - 2) * y_fit[n - 2] - matA(6, n - 1) * y_fit[n - 1];
 			for (int i = n - 5; i >= 0; i--) {
-				y_fit[i] = matY.GetElement(i, 0) - matA.GetElement(4, i + 1) * y_fit[i + 1] - matA.GetElement(5, i + 2) * y_fit[i + 2] - matA.GetElement(6, i + 3) * y_fit[i + 3];
+				y_fit[i] = matY(i, 0) - matA(4, i + 1) * y_fit[i + 1] - matA(5, i + 2) * y_fit[i + 2] - matA(6, i + 3) * y_fit[i + 3];
 			}
 			return true;
 		}
@@ -845,7 +845,7 @@ namespace NUDTTK {
 				boost::scoped_array<double> pw(new double[n]());
 #endif  // __cplusplus >= 201103L
 				for (size_t i = 0; i < n; i++) {
-					if (fabs(x[i] - dMean) > factor * dVar)
+					if (std::fabs(x[i] - dMean) > factor * dVar)
 						pw[i] = 1;				// Outlier
 					else
 						pw[i] = 0;
@@ -904,7 +904,7 @@ namespace NUDTTK {
 #else	//__cplusplus < 201103L
 			boost::scoped_array<double> w_new(new double[n]());
 #endif  // __cplusplus >= 201103L
-			for (int i = 0; i < n; i++) {
+			for (size_t i = 0; i < n; i++) {
 				w[i] = 1.0;
 				w_new[i] = 1.0;
 			}
@@ -924,21 +924,21 @@ namespace NUDTTK {
 #else	//__cplusplus < 201103L
 				boost::scoped_array<double> xx(new double[n]());
 #endif  // __cplusplus >= 201103L
-				for (int i = 0; i < n; i++)
+				for (size_t i = 0; i < n; i++)
 					xx[i] = x[i] - x[0];
-				for (int i = 0; i < n; i++) {
-					matY.SetElement(i, 0, w[i] * y[i]);
-					matC.SetElement(i, 0, w[i] * 1.0);
-					for (int j = 1; j < m; j++)
-						matC.SetElement(i, j, w[i] * pow(xx[i], j));
+				for (size_t i = 0; i < n; i++) {
+					matY(i, 0) = w[i] * y[i];
+					matC(i, 0) = w[i] * 1.0;
+					for (size_t j = 1; j < m; j++)
+						matC(i, j) = w[i] * pow(xx[i], j);
 				}
 				Matrix matS = Matrix(matC.Transpose() * matC).Inv() * matC.Transpose() * matY;
 				Matrix matY_Fit = matC * matS;
 				// 计算均方根
 				double rms = 0;
 				int kk = 0;
-				for (int i = 0; i < n; i++) {
-					y_fit[i] = matY_Fit.GetElement(i, 0);
+				for (size_t i = 0; i < n; i++) {
+					y_fit[i] = matY_Fit(i, 0);
 					if (w[i] == 1.0) {
 						kk++;
 						rms += std::pow(y[i] - y_fit[i], 2);
@@ -946,7 +946,7 @@ namespace NUDTTK {
 				}
 				rms = std::sqrt(rms / kk);
 				bool bEqual = true;
-				for (int i = 0; i < n; i++) {
+				for (size_t i = 0; i < n; i++) {
 					if (std::fabs(y[i] - y_fit[i]) >= 3.0 * rms)
 						w_new[i] = 0;
 					else
